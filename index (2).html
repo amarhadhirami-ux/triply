@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Triply – Planifiez votre voyage, jour par jour</title>
+  <meta name="description" content="Triply est une plateforme en construction pour planifier un voyage : itinéraire par journée, budget et recherche de vols.">
+  <meta name="theme-color" content="#0f2a3d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧭%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #0f2a3d;        /* bleu nuit : texte et fonds sombres */
+      --lagoon: #0b7a82;     /* bleu-vert : liens et éléments d'action */
+      --mist: #eaf3f4;       /* gris-bleu très clair : fond de page */
+      --paper: #ffffff;      /* blanc : surfaces */
+      --sun: #f0b43a;        /* jaune soleil : accent unique */
+      --muted: #4b6272;      /* texte secondaire */
+      --line: #cddde0;       /* traits fins */
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body {
+      margin: 0; background: var(--mist); color: var(--ink);
+      font-family: var(--sans); font-size: 1.0625rem; line-height: 1.6;
+    }
+    a { color: var(--lagoon); }
+    :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; border-radius: 4px; }
+    .wrap { width: min(1080px, 100% - 2.5rem); margin-inline: auto; }
+
+    /* ---------- En-tête et navigation ---------- */
+    header.site {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--ink); color: #fff;
+    }
+    .bar { display: flex; align-items: center; justify-content: space-between; min-height: 64px; }
+    .logo { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; letter-spacing: .01em; color: #fff; text-decoration: none; }
+    .logo span { color: var(--sun); }
+    nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 2rem; }
+    nav a { color: #dbe9ec; text-decoration: none; padding: .5rem 0; }
+    nav a:hover { color: #fff; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--sun); }
+    .menu-btn {
+      display: none; background: none; border: 1px solid #3d5b70; color: #fff;
+      border-radius: 8px; padding: .55rem .8rem; font: inherit; cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+      .menu-btn { display: inline-flex; align-items: center; gap: .5rem; }
+      nav { position: absolute; left: 0; right: 0; top: 100%; background: var(--ink); border-top: 1px solid #25445a; display: none; }
+      nav.open { display: block; }
+      nav ul { flex-direction: column; gap: 0; padding: .5rem 1.25rem 1.25rem; }
+      nav a { display: block; padding: .9rem 0; border-bottom: 1px solid #25445a; font-size: 1.1rem; }
+    }
+
+    /* ---------- Hero ---------- */
+    .hero { background: var(--ink); color: #fff; padding: 3.5rem 0 4.5rem; overflow: hidden; }
+    .hero .wrap { display: grid; gap: 2.5rem; grid-template-columns: 1.1fr .9fr; align-items: center; }
+    .hero h1 {
+      font-family: var(--serif); font-weight: 700; line-height: 1.05;
+      font-size: clamp(2.5rem, 7vw, 4.5rem); margin: 0 0 1.25rem; letter-spacing: -.01em;
+    }
+    .hero p.lead { font-size: 1.2rem; color: #c9dde2; max-width: 34rem; margin: 0 0 2rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: .9rem; }
+    .btn {
+      display: inline-block; padding: .9rem 1.5rem; border-radius: 999px; font-weight: 600;
+      text-decoration: none; border: 2px solid transparent; transition: background-color .15s, color .15s;
+    }
+    .btn.primary { background: var(--sun); color: var(--ink); }
+    .btn.primary:hover { background: #f7c660; }
+    .btn.ghost { border-color: #4d6b80; color: #fff; }
+    .btn.ghost:hover { background: #17384f; }
+    .route { width: 100%; height: auto; }
+    .route .path { stroke-dasharray: 6 9; animation: dash 1.6s ease-out 1 both; }
+    @keyframes dash { from { stroke-dashoffset: 400; } to { stroke-dashoffset: 0; } }
+    @media (max-width: 860px) {
+      .hero .wrap { grid-template-columns: 1fr; }
+      .route-wrap { order: -1; max-width: 420px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .route .path { animation: none; }
+    }
+
+    /* ---------- Sections ---------- */
+    section { padding: 4.5rem 0; }
+    h2 { font-family: var(--serif); font-size: clamp(1.8rem, 4.5vw, 2.6rem); line-height: 1.15; margin: 0 0 .75rem; }
+    .intro { color: var(--muted); max-width: 40rem; margin: 0 0 2.5rem; }
+
+    /* Liste des fonctionnalités avec leur état réel */
+    .features { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; }
+    .features li { display: grid; grid-template-columns: 1fr auto; gap: .25rem 1.5rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); }
+    .features li:last-child { border-bottom: 0; }
+    .features h3 { margin: 0; font-size: 1.1rem; }
+    .features p { margin: 0; color: var(--muted); grid-column: 1; }
+    .status { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: .9rem; font-weight: 600; padding: .3rem .8rem; border-radius: 999px; white-space: nowrap; }
+    .status.done { background: #d8f0e3; color: #11613a; }
+    .status.wip { background: #fbefd0; color: #7a5200; }
+    .status.later { background: #e3eaef; color: #3a5163; }
+    @media (max-width: 560px) {
+      .features li { grid-template-columns: 1fr; }
+      .status { grid-column: 1; grid-row: auto; justify-self: start; margin-top: .5rem; }
+    }
+
+    /* Étapes : une vraie séquence, donc numérotée */
+    .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; grid-template-columns: repeat(3, 1fr); }
+    .steps li { counter-increment: step; border-top: 3px solid var(--ink); padding-top: 1rem; }
+    .steps li::before { content: counter(step); font-family: var(--serif); font-size: 2.2rem; font-weight: 700; color: var(--lagoon); display: block; line-height: 1; margin-bottom: .5rem; }
+    .steps h3 { margin: 0 0 .4rem; font-size: 1.15rem; }
+    .steps p { margin: 0; color: var(--muted); }
+    @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
+    /* Engagements */
+    .band { background: var(--paper); border-block: 1px solid var(--line); }
+    .band .cols { display: grid; gap: 2.5rem; grid-template-columns: 1fr 1fr; }
+    .band ul { margin: 0; padding-left: 1.2rem; }
+    .band li { margin-bottom: .6rem; }
+    @media (max-width: 760px) { .band .cols { grid-template-columns: 1fr; } }
+
+    /* ---------- Formulaire « Créer mon voyage » ---------- */
+    .create { background: var(--paper); border-bottom: 1px solid var(--line); }
+    .create form { max-width: 820px; }
+    .form-grid { display: grid; gap: 1.5rem 1.5rem; grid-template-columns: 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label, .field legend { font-weight: 600; padding: 0; }
+    fieldset.field { border: 0; margin: 0; padding: 0; }
+    .hint { color: var(--muted); font-size: .92rem; }
+    .error { color: #b3261e; font-size: .95rem; font-weight: 600; }
+    .error:empty { display: none; }
+    .create input[type="text"], .create input[type="date"], .create input[type="number"] {
+      font: inherit; color: var(--ink); background: #fff; width: 100%; min-height: 48px;
+      padding: .7rem .9rem; border: 1.5px solid #8fa8b0; border-radius: 10px;
+    }
+    .create input[aria-invalid="true"] { border-color: #b3261e; }
+    .stepper { display: inline-flex; align-items: stretch; width: max-content; }
+    .stepper button {
+      width: 48px; min-height: 48px; font-size: 1.4rem; line-height: 1; cursor: pointer;
+      background: var(--mist); color: var(--ink); border: 1.5px solid #8fa8b0;
+    }
+    .stepper button:first-child { border-radius: 10px 0 0 10px; }
+    .stepper button:last-child { border-radius: 0 10px 10px 0; }
+    .stepper button:hover { background: #d9e8ea; }
+    .stepper input[type="number"] { width: 5rem; text-align: center; border-radius: 0; border-inline: 0; }
+    .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; margin-top: .25rem; }
+    .choice { position: relative; display: block; cursor: pointer; }
+    .choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .choice-body { display: block; height: 100%; padding: .9rem 1rem; border: 1.5px solid #8fa8b0; border-radius: 12px; background: #fff; }
+    .choice-body strong { display: block; }
+    .choice-body span { color: var(--muted); font-size: .92rem; }
+    .choice input:checked + .choice-body { border-color: var(--lagoon); box-shadow: inset 0 0 0 1.5px var(--lagoon); background: var(--mist); }
+    .choice input:focus-visible + .choice-body { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .form-actions { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    button.btn { font: inherit; font-weight: 600; cursor: pointer; }
+    .btn.outline { border-color: var(--ink); color: var(--ink); background: transparent; }
+    .btn.outline:hover { background: var(--mist); }
+    .result { margin-top: 2.5rem; max-width: 820px; background: var(--mist); border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem; }
+    .result:focus { outline: none; }
+    .result h3 { font-family: var(--serif); font-size: 1.5rem; margin: 0 0 1rem; }
+    .result dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .6rem 1.5rem; }
+    .result dt { color: var(--muted); }
+    .result dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+    .result .note { margin: 1.25rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .98rem; }
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .result dl { grid-template-columns: 1fr; gap: .1rem; }
+      .result dd { margin-bottom: .7rem; }
+    }
+
+    footer { background: var(--ink); color: #b7cdd3; padding: 2.5rem 0; font-size: .95rem; }
+    footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+    footer a { color: #fff; }
+  </style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="logo" href="#top" aria-label="Triply, retour en haut de la page">Tri<span>p</span>ly</a>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav">
+      <span aria-hidden="true">☰</span> Menu
+    </button>
+    <nav id="mainNav" aria-label="Navigation principale">
+      <ul>
+        <li><a href="#creer">Créer mon voyage</a></li>
+        <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+        <li><a href="#fonctionnement">Comment ça marchera</a></li>
+        <li><a href="#engagements">Nos engagements</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Votre voyage, jour par jour.</h1>
+        <p class="lead">Triply vous aidera à construire un itinéraire adapté à vos envies, à suivre votre budget et à trouver vos vols. Le site est en construction : voici ce qui est prêt, et ce qui arrive.</p>
+        <div class="actions">
+          <a class="btn primary" href="#creer">Créer mon voyage</a>
+          <a class="btn ghost" href="#fonctionnalites">Voir l’avancement</a>
+          <a class="btn ghost" href="#fonctionnement">Comment ça marchera</a>
+        </div>
+      </div>
+      <div class="route-wrap">
+        <!-- Illustration décorative : un itinéraire en pointillés avec trois étapes -->
+        <svg class="route" viewBox="0 0 400 340" role="img" aria-label="Illustration : un itinéraire en pointillés reliant trois étapes">
+          <rect x="8" y="8" width="384" height="324" rx="22" fill="#143850" stroke="#2c5671" />
+          <path class="path" d="M70 270 C 130 270, 120 180, 190 175 S 300 190, 330 80" fill="none" stroke="#f0b43a" stroke-width="4" stroke-linecap="round" />
+          <circle cx="70" cy="270" r="13" fill="#0f2a3d" stroke="#fff" stroke-width="4" />
+          <circle cx="190" cy="175" r="13" fill="#0f2a3d" stroke="#fff" stroke-width="4" />
+          <circle cx="330" cy="80" r="13" fill="#f0b43a" stroke="#fff" stroke-width="4" />
+          <text x="70" y="305" text-anchor="middle" fill="#c9dde2" font-size="16" font-family="system-ui, sans-serif">Départ</text>
+          <text x="190" y="215" text-anchor="middle" fill="#c9dde2" font-size="16" font-family="system-ui, sans-serif">Étape</text>
+          <text x="330" y="55" text-anchor="middle" fill="#c9dde2" font-size="16" font-family="system-ui, sans-serif">Arrivée</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <section id="creer" class="create">
+    <div class="wrap">
+      <h2>Créer mon voyage</h2>
+      <p class="intro">Renseignez les informations de base de votre projet. Le générateur n’est pas encore disponible : pour l’instant, Triply affiche un récapitulatif et quelques calculs à partir de vos réponses. Rien n’est envoyé ni enregistré.</p>
+
+      <form id="tripForm" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" name="destination" autocomplete="off" placeholder="Ex. Lisbonne, Portugal" aria-describedby="err-destination">
+            <span class="error" id="err-destination" role="alert"></span>
+          </div>
+
+          <div class="field">
+            <label for="origin">Ville de départ</label>
+            <input type="text" id="origin" name="origin" autocomplete="address-level2" placeholder="Ex. Paris" aria-describedby="err-origin">
+            <span class="error" id="err-origin" role="alert"></span>
+          </div>
+
+          <div class="field">
+            <label for="startDate">Date de départ</label>
+            <input type="date" id="startDate" name="startDate" aria-describedby="err-startDate">
+            <span class="error" id="err-startDate" role="alert"></span>
+          </div>
+
+          <div class="field">
+            <label for="endDate">Date de retour</label>
+            <input type="date" id="endDate" name="endDate" aria-describedby="err-endDate">
+            <span class="error" id="err-endDate" role="alert"></span>
+          </div>
+
+          <div class="field">
+            <label for="budget">Budget total (en €)</label>
+            <input type="number" id="budget" name="budget" min="1" step="1" inputmode="numeric" placeholder="Ex. 1500" aria-describedby="hint-budget err-budget">
+            <span class="hint" id="hint-budget">Pour l’ensemble des voyageurs.</span>
+            <span class="error" id="err-budget" role="alert"></span>
+          </div>
+
+          <div class="field">
+            <label for="travelers">Nombre de voyageurs</label>
+            <div class="stepper">
+              <button type="button" id="minus" aria-label="Retirer un voyageur">−</button>
+              <input type="number" id="travelers" name="travelers" min="1" max="20" step="1" value="1" inputmode="numeric" aria-describedby="err-travelers">
+              <button type="button" id="plus" aria-label="Ajouter un voyageur">+</button>
+            </div>
+            <span class="error" id="err-travelers" role="alert"></span>
+          </div>
+
+          <fieldset class="field full" aria-describedby="err-style">
+            <legend>Type de séjour</legend>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="style" value="Détente">
+                <span class="choice-body"><strong>Détente</strong><span>Repos, plage, rythme tranquille.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="style" value="Aventure">
+                <span class="choice-body"><strong>Aventure</strong><span>Nature, sport, découvertes.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="style" value="Romantique">
+                <span class="choice-body"><strong>Romantique</strong><span>Séjour à deux, moments calmes.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="style" value="Luxe">
+                <span class="choice-body"><strong>Luxe</strong><span>Confort et expériences haut de gamme.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="style" value="Petit budget">
+                <span class="choice-body"><strong>Petit budget</strong><span>Dépenses maîtrisées.</span></span>
+              </label>
+            </div>
+            <span class="error" id="err-style" role="alert"></span>
+          </fieldset>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Afficher le récapitulatif</button>
+          <button type="reset" class="btn outline" id="resetBtn">Tout effacer</button>
+        </div>
+      </form>
+
+      <div class="result" id="tripResult" tabindex="-1" hidden></div>
+    </div>
+  </section>
+
+  <section id="fonctionnalites">
+    <div class="wrap">
+      <h2>Où en est Triply</h2>
+      <p class="intro">Chaque fonctionnalité affiche son état réel. Rien n’est simulé : ce qui n’existe pas encore est indiqué comme tel.</p>
+      <ul class="features">
+        <li>
+          <h3>Page d’accueil et navigation mobile</h3>
+          <p>La vitrine du projet, lisible sur téléphone comme sur ordinateur.</p>
+          <span class="status done">Disponible</span>
+        </li>
+        <li>
+          <h3>Formulaire « Créer mon voyage »</h3>
+          <p>Saisie de la destination, des dates, du budget, des voyageurs et du type de séjour, avec un récapitulatif.</p>
+          <span class="status done">Disponible</span>
+        </li>
+        <li>
+          <h3>Générateur de voyages personnalisé</h3>
+          <p>Vous indiquez destination, durée et centres d’intérêt ; Triply propose un plan.</p>
+          <span class="status wip">En construction</span>
+        </li>
+        <li>
+          <h3>Calculateur de budget</h3>
+          <p>Vous saisissez vos propres estimations et suivez le total de votre voyage.</p>
+          <span class="status wip">En construction</span>
+        </li>
+        <li>
+          <h3>Activités organisées par journée</h3>
+          <p>Un programme clair pour chaque jour, que vous pouvez modifier.</p>
+          <span class="status wip">En construction</span>
+        </li>
+        <li>
+          <h3>Comptes utilisateurs et sauvegarde des voyages</h3>
+          <p>Retrouvez vos voyages sur n’importe quel appareil.</p>
+          <span class="status later">Prévu</span>
+        </li>
+        <li>
+          <h3>Recherche de vols avec redirection vers Skyscanner</h3>
+          <p>Vous préparez votre recherche sur Triply, puis vous poursuivez sur Skyscanner.</p>
+          <span class="status later">Prévu</span>
+        </li>
+        <li>
+          <h3>Hébergements et activités via des partenaires</h3>
+          <p>Ajoutés lorsque des partenariats seront en place.</p>
+          <span class="status later">Plus tard</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="fonctionnement" class="band">
+    <div class="wrap">
+      <h2>Comment ça marchera</h2>
+      <p class="intro">Le parcours prévu, de l’idée au départ.</p>
+      <ol class="steps">
+        <li>
+          <h3>Décrivez votre voyage</h3>
+          <p>Destination, dates, nombre de voyageurs et ce que vous aimez faire.</p>
+        </li>
+        <li>
+          <h3>Ajustez votre programme</h3>
+          <p>Triply organise les activités jour par jour ; vous gardez la main sur chaque choix.</p>
+        </li>
+        <li>
+          <h3>Suivez votre budget et préparez vos vols</h3>
+          <p>Vous comparez ensuite les vols directement sur Skyscanner.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="engagements">
+    <div class="wrap">
+      <div class="cols">
+        <div>
+          <h2>Nos engagements</h2>
+          <p class="intro" style="margin-bottom:0">Un outil de planification doit être fiable avant d’être spectaculaire.</p>
+        </div>
+        <ul>
+          <li>Aucun prix affiché sans source réelle.</li>
+          <li>Aucune réservation simulée : les réservations se font chez les partenaires.</li>
+          <li>Une fonctionnalité non terminée est toujours signalée comme telle.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="year">2026</span> Triply – Version 0.1, en construction.</span>
+    <a href="#top">Retour en haut</a>
+  </div>
+</footer>
+
+<script>
+  // Menu mobile : ouvre et ferme la navigation
+  var btn = document.getElementById('menuBtn');
+  var nav = document.getElementById('mainNav');
+  btn.addEventListener('click', function () {
+    var open = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  // Referme le menu après un clic sur un lien
+  nav.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      nav.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+  // ---------- Formulaire « Créer mon voyage » ----------
+  var form = document.getElementById('tripForm');
+  var result = document.getElementById('tripResult');
+  var startInput = document.getElementById('startDate');
+  var endInput = document.getElementById('endDate');
+  var travelersInput = document.getElementById('travelers');
+
+  function todayString() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  startInput.min = todayString();
+  endInput.min = todayString();
+  startInput.addEventListener('change', function () {
+    if (startInput.value) { endInput.min = startInput.value; }
+  });
+
+  // Boutons − et + du nombre de voyageurs
+  function changeTravelers(delta) {
+    var n = parseInt(travelersInput.value, 10);
+    if (isNaN(n)) { n = 1; }
+    travelersInput.value = Math.min(20, Math.max(1, n + delta));
+  }
+  document.getElementById('minus').addEventListener('click', function () { changeTravelers(-1); });
+  document.getElementById('plus').addEventListener('click', function () { changeTravelers(1); });
+
+  function setError(id, message) {
+    var field = document.getElementById(id);
+    var err = document.getElementById('err-' + id);
+    if (err) { err.textContent = message || ''; }
+    if (field && field.tagName === 'INPUT') {
+      if (message) { field.setAttribute('aria-invalid', 'true'); } else { field.removeAttribute('aria-invalid'); }
+    }
+  }
+
+  function parseDate(value) {
+    var p = value.split('-');
+    return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)));
+  }
+  function formatDate(value) {
+    return parseDate(value).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  function euros(n) {
+    return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  }
+
+  function validate() {
+    var firstInvalid = null;
+    function fail(id, message, focusId) {
+      setError(id, message);
+      if (!firstInvalid) { firstInvalid = document.getElementById(focusId || id); }
+    }
+
+    var destination = document.getElementById('destination').value.trim();
+    var origin = document.getElementById('origin').value.trim();
+    var start = startInput.value;
+    var end = endInput.value;
+    var budget = parseFloat(document.getElementById('budget').value);
+    var travelers = parseInt(travelersInput.value, 10);
+    var styleChoice = form.querySelector('input[name="style"]:checked');
+
+    setError('destination', ''); setError('origin', ''); setError('startDate', '');
+    setError('endDate', ''); setError('budget', ''); setError('travelers', ''); setError('style', '');
+
+    if (!destination) { fail('destination', 'Indiquez votre destination.'); }
+    if (!origin) { fail('origin', 'Indiquez votre ville de départ.'); }
+    if (!start) {
+      fail('startDate', 'Choisissez une date de départ.');
+    } else if (start < todayString()) {
+      fail('startDate', 'La date de départ ne peut pas être dans le passé.');
+    }
+    if (!end) {
+      fail('endDate', 'Choisissez une date de retour.');
+    } else if (start && end < start) {
+      fail('endDate', 'La date de retour doit être le jour du départ ou après.');
+    }
+    if (isNaN(budget) || budget <= 0) { fail('budget', 'Indiquez un budget supérieur à 0 €.'); }
+    if (isNaN(travelers) || travelers < 1 || travelers > 20) { fail('travelers', 'Indiquez un nombre de voyageurs entre 1 et 20.'); }
+    if (!styleChoice) { fail('style', 'Choisissez un type de séjour.', null); if (!firstInvalid || firstInvalid === null) { firstInvalid = form.querySelector('input[name="style"]'); } }
+
+    if (firstInvalid) { firstInvalid.focus(); return null; }
+    return { destination: destination, origin: origin, start: start, end: end, budget: budget, travelers: travelers, style: styleChoice.value };
+  }
+
+  function addRow(list, label, value) {
+    var dt = document.createElement('dt');
+    var dd = document.createElement('dd');
+    dt.textContent = label;
+    dd.textContent = value;
+    list.appendChild(dt);
+    list.appendChild(dd);
+  }
+
+  function showResult(data) {
+    var nights = Math.round((parseDate(data.end) - parseDate(data.start)) / 86400000);
+    var days = nights + 1;
+    var perPerson = data.budget / data.travelers;
+    var perPersonPerDay = perPerson / days;
+
+    result.textContent = '';
+    var title = document.createElement('h3');
+    title.textContent = 'Récapitulatif de votre demande';
+    var list = document.createElement('dl');
+    addRow(list, 'Trajet', 'De ' + data.origin + ' vers ' + data.destination);
+    addRow(list, 'Départ', formatDate(data.start));
+    addRow(list, 'Retour', formatDate(data.end));
+    addRow(list, 'Durée', days + (days > 1 ? ' jours' : ' jour') + ' (' + nights + (nights > 1 ? ' nuits' : ' nuit') + ')');
+    addRow(list, 'Voyageurs', String(data.travelers));
+    addRow(list, 'Type de séjour', data.style);
+    addRow(list, 'Budget total', euros(data.budget));
+    addRow(list, 'Budget par personne', euros(perPerson));
+    addRow(list, 'Par personne et par jour', euros(perPersonPerDay));
+
+    var note = document.createElement('p');
+    note.className = 'note';
+    note.textContent = 'Les trois derniers montants sont de simples divisions de votre budget (jours de départ et de retour inclus). Le générateur de voyages n’est pas encore disponible : aucun itinéraire, prix ou réservation n’est proposé pour le moment, et ces informations n’ont été ni envoyées ni enregistrées.';
+
+    result.appendChild(title);
+    result.appendChild(list);
+    result.appendChild(note);
+    result.hidden = false;
+    result.focus();
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var data = validate();
+    if (data) { showResult(data); } else { result.hidden = true; }
+  });
+
+  form.addEventListener('reset', function () {
+    ['destination', 'origin', 'startDate', 'endDate', 'budget', 'travelers', 'style'].forEach(function (id) { setError(id, ''); });
+    result.hidden = true;
+    result.textContent = '';
+    endInput.min = todayString();
+  });
+
+  // Année automatique dans le pied de page
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
